@@ -1,5 +1,5 @@
 """
-TFM — Sistema integrado de análisis de sentimiento financiero y screener
+TFM. Sistema integrado de análisis de sentimiento financiero y screener
 inteligente para soporte a decisiones de inversión personal.
 
 Autor: Pablo Blázquez Jiménez
@@ -21,7 +21,7 @@ import yfinance as yf
 # ---------------------------------------------------------------------------
 
 st.set_page_config(
-    page_title="Asistente de Inversión — TFM",
+    page_title="Asistente de Inversión, TFM",
     page_icon="📊",
     layout="wide",
 )
@@ -29,6 +29,17 @@ st.set_page_config(
 ACCIONES = ["JNJ", "META", "GOOGL", "NVDA"]
 ETFS = ["SPY", "MCHI", "EEM", "URTH"]
 WATCHLIST = ACCIONES + ETFS
+
+NOMBRES_COMPLETOS = {
+    "JNJ": "Johnson & Johnson (JNJ)",
+    "META": "Meta Platforms (META)",
+    "GOOGL": "Alphabet / Google (GOOGL)",
+    "NVDA": "Nvidia (NVDA)",
+    "SPY": "S&P 500 (SPY)",
+    "MCHI": "MSCI China (MCHI)",
+    "EEM": "Mercados emergentes (EEM)",
+    "URTH": "MSCI World (URTH)",
+}
 
 ALIAS_NOTICIAS = {
     "JNJ": ["Johnson & Johnson", "JNJ"],
@@ -201,13 +212,13 @@ def grafico_desglose(componentes, titulo):
 
 
 # ---------------------------------------------------------------------------
-# Interfaz — cabecera
+# Interfaz: cabecera
 # ---------------------------------------------------------------------------
 
 st.title("📊 Asistente de Inversión Personal")
 st.caption(
     "Sistema de apoyo a decisiones de inversión basado en análisis de sentimiento "
-    "(FinBERT), indicadores técnicos e interpretabilidad. El sistema informa — "
+    "(FinBERT), indicadores técnicos e interpretabilidad. El sistema informa: "
     "la decisión final es siempre del usuario."
 )
 
@@ -216,11 +227,16 @@ tab_actual, tab_historico, tab_explica = st.tabs(
 )
 
 # ---------------------------------------------------------------------------
-# Pestaña 1 — Estado actual
+# Pestaña 1: Estado actual
 # ---------------------------------------------------------------------------
 
 with tab_actual:
-    ticker_actual = st.selectbox("Selecciona un activo", WATCHLIST, key="ticker_actual")
+    ticker_actual = st.selectbox(
+        "Selecciona un activo",
+        WATCHLIST,
+        format_func=lambda t: NOMBRES_COMPLETOS.get(t, t),
+        key="ticker_actual",
+    )
 
     with st.spinner(f"Descargando datos recientes de {ticker_actual}..."):
         df_reciente = descargar_precios_recientes(ticker_actual)
@@ -228,7 +244,7 @@ with tab_actual:
     col_precio, col_señal = st.columns([2, 1])
 
     with col_precio:
-        st.subheader(f"Evolución reciente — {ticker_actual}")
+        st.subheader(f"Evolución reciente de {ticker_actual}")
         fig, ax = plt.subplots(figsize=(9, 4))
         ax.plot(df_reciente["Date"], df_reciente["Close"], label="Precio", linewidth=1.2)
         ax.plot(df_reciente["Date"], df_reciente["SMA_20"], label="Media 20d", linewidth=0.8, linestyle="--")
@@ -283,19 +299,24 @@ with tab_actual:
             st.caption(f"Basado en {num_noticias_hoy} noticia(s) reciente(s) + indicadores técnicos.")
             with st.expander("Ver noticias analizadas"):
                 for _, n in df_noticias_vivo.iterrows():
-                    st.write(f"**[{n['sentimiento']}]** {n['titulo']} — *{n['fuente']}*")
+                    st.write(f"**[{n['sentimiento']}]** {n['titulo']} (fuente: {n['fuente']})")
         else:
-            st.caption("Sin noticias recientes relevantes encontradas — señal basada solo en técnico.")
+            st.caption("Sin noticias recientes relevantes encontradas. Señal basada solo en técnico.")
 
 # ---------------------------------------------------------------------------
-# Pestaña 2 — Backtest histórico
+# Pestaña 2: Backtest histórico
 # ---------------------------------------------------------------------------
 
 with tab_historico:
     df_hist = cargar_screener_historico()
 
     st.subheader("Evolución del score a lo largo del periodo analizado (2011–2020)")
-    ticker_hist = st.selectbox("Activo", df_hist["stock"].unique(), key="ticker_hist")
+    ticker_hist = st.selectbox(
+        "Activo",
+        df_hist["stock"].unique(),
+        format_func=lambda t: NOMBRES_COMPLETOS.get(t, t),
+        key="ticker_hist",
+    )
 
     datos_ticker = df_hist[df_hist["stock"] == ticker_hist].sort_values("date")
 
@@ -343,7 +364,7 @@ with tab_historico:
     st.pyplot(fig)
 
 # ---------------------------------------------------------------------------
-# Pestaña 3 — Explicabilidad
+# Pestaña 3: Explicabilidad
 # ---------------------------------------------------------------------------
 
 with tab_explica:
@@ -357,7 +378,12 @@ with tab_explica:
 
     col1, col2 = st.columns(2)
     with col1:
-        ticker_exp = st.selectbox("Activo", df_hist["stock"].unique(), key="ticker_exp")
+        ticker_exp = st.selectbox(
+            "Activo",
+            df_hist["stock"].unique(),
+            format_func=lambda t: NOMBRES_COMPLETOS.get(t, t),
+            key="ticker_exp",
+        )
     with col2:
         fechas_disponibles = df_hist[df_hist["stock"] == ticker_exp]["date"].dt.date
         fecha_exp = st.selectbox("Fecha", sorted(fechas_disponibles, reverse=True), key="fecha_exp")
@@ -371,7 +397,7 @@ with tab_explica:
             "rsi": fila["aporte_rsi"],
             "sentimiento": fila["aporte_sentimiento"],
         }
-        titulo = f"{ticker_exp} — {fecha_exp} | Score: {fila['score_dca']:.1f} ({fila['etiqueta_dca']})"
+        titulo = f"{ticker_exp}, {fecha_exp} | Score: {fila['score_dca']:.1f} ({fila['etiqueta_dca']})"
         fig = grafico_desglose(componentes, titulo)
         st.pyplot(fig)
 
@@ -384,7 +410,7 @@ with tab_explica:
 
 st.divider()
 st.caption(
-    "TFM — Máster en Data Science, Big Data & Business Analytics (UCM). "
+    "TFM. Máster en Data Science, Big Data & Business Analytics (UCM). "
     "Fuentes de datos: Yahoo Finance (yfinance), noticias RSS y dataset histórico "
     "de Kaggle (licencia CC0-1.0). Modelo de sentimiento: FinBERT (HuggingFace, Apache 2.0)."
 )
