@@ -384,7 +384,7 @@ with tab_explica:
 
 st.divider()
 st.caption(
-    "TFM — Máster en Big Data, Data Science & IA (UCM). "
+    "TFM — Máster en Data Science, Big Data & Business Analytics (UCM). "
     "Fuentes de datos: Yahoo Finance (yfinance), noticias RSS y dataset histórico "
     "de Kaggle (licencia CC0-1.0). Modelo de sentimiento: FinBERT (HuggingFace, Apache 2.0)."
 )
